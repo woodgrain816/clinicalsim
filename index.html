@@ -22,7 +22,7 @@
   function fail(t){ msg.style.display="none"; var e=document.getElementById("err"); e.style.display="block"; e.textContent=t }
   if(!window.crypto||!crypto.subtle){ fail("This browser can't open Clinical Sim here (it needs a secure https page). Open the https:// address."); return }
   if("serviceWorker" in navigator&&location.protocol==="https:") navigator.serviceWorker.register("sw.js").catch(function(){});
-  var A=[234,119,17,59,37,215,39,227,196,190,75,203,206,95,30,209,206,25,38,11,4,69,150,88,29,187,167,172,82,31,64,45], B=[19,114,95,137,240,156,245,210,30,194,50,205,234,22,219,240,174,126,179,237,69,107,216,31,60,148,112,135,35,212,24,253], k=new Uint8Array(A.length); for(var i=0;i<A.length;i++) k[i]=A[i]^B[i];
+  var A=[51,151,65,37,250,250,192,245,116,66,212,67,46,43,78,10,44,244,137,69,97,196,55,7,23,98,233,23,241,12,64,176], B=[202,146,15,151,47,177,18,196,174,62,173,69,10,98,139,43,76,147,28,163,32,234,121,64,54,77,62,60,128,199,24,96], k=new Uint8Array(A.length); for(var i=0;i<A.length;i++) k[i]=A[i]^B[i];
   var S=crypto.subtle, te=new TextEncoder();
   function hmac(key,data){ return S.importKey("raw",key,{name:"HMAC",hash:"SHA-256"},false,["sign"]).then(function(h){ return S.sign("HMAC",h,data) }) }
   function get(url,prog){ return fetch(url).then(function(r){ if(!r.ok) throw new Error("download failed ("+r.status+")");
@@ -39,9 +39,11 @@
         return S.importKey("raw",ks[0],{name:"AES-CBC"},false,["decrypt"]) }).then(function(ek){ return S.decrypt({name:"AES-CBC",iv:iv},ek,ct) }) }).then(function(p){ return new TextDecoder().decode(p) }) }
   /* for the sim once it is running: this is a website, and the House monitor is fetched the same way */
   window.__csWeb=1;
-  var hmP=null; window.__csLoadHM=function(){ if(!hmP){ hmP=get("hm.dat?v=b956d5818152").then(open); hmP.catch(function(){ hmP=null }) } return hmP };
-  get("cs.dat?v=b956d5818152",function(f){ bar.style.width=Math.min(100,f*100)+"%" }).then(function(buf){ msg.textContent="Opening…"; bar.style.width="100%"; return open(buf) })
-  .then(function(html){ window.__csLoadHM(); document.open(); document.write(html); document.close(); })
+  var hmP=null; window.__csLoadHM=function(){ if(!hmP){ hmP=get("hm.dat?v=0c187dba0b6b").then(open); hmP.catch(function(){ hmP=null }) } return hmP };
+  get("cs.dat?v=0c187dba0b6b",function(f){ bar.style.width=Math.min(100,f*100)+"%" }).then(function(buf){ msg.textContent="Opening…"; bar.style.width="100%"; return open(buf) })
+  .then(function(html){ window.__csLoadHM();
+    /* the website mutes the background music after the intro (see web_part.js); un-mute it so this start has its intro theme */
+    try{ if(localStorage.getItem("cs_web_bgm")!=="1"){ var c=JSON.parse(localStorage.getItem("cs_music")||"null"); if(c&&c.webAutoMute){ c.mute=false; delete c.webAutoMute; localStorage.setItem("cs_music",JSON.stringify(c)) } } }catch(e){} document.open(); document.write(html); document.close(); })
   .catch(function(e){ fail("Couldn't open Clinical Sim: "+(e&&e.message||e)+". Check the internet and reload.") });
 })();
 </script>

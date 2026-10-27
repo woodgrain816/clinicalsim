@@ -2,8 +2,8 @@
    both are saved here it runs with no internet (school Wi-Fi drops, Chromebooks offline).
    Online, the page is always fetched fresh so updates arrive; the encrypted file is
    versioned (cs.dat?v=tag) and kept until a new one replaces it. */
-const CACHE='clinicalsim-b956d5818152';
-self.addEventListener('install',e=>{ e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','cs.dat?v=b956d5818152','hm.dat?v=b956d5818152','manifest.webmanifest','icon-192.png'])).then(()=>self.skipWaiting())) });
+const CACHE='clinicalsim-0c187dba0b6b';
+self.addEventListener('install',e=>{ e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','cs.dat?v=0c187dba0b6b','hm.dat?v=0c187dba0b6b','manifest.webmanifest','icon-192.png'])).then(()=>self.skipWaiting())) });
 self.addEventListener('activate',e=>{ e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE&&k.startsWith('clinicalsim-')).map(k=>caches.delete(k)))).then(()=>self.clients.claim())) });
 self.addEventListener('fetch',e=>{ const r=e.request; if(r.method!=='GET'||new URL(r.url).origin!==location.origin) return;
   if(r.mode==='navigate'){
