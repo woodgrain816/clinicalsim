@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Clinical Sim</title>
+<meta name="theme-color" content="#0b1a24">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<style>
+  html,body{margin:0;height:100%;background:#0b1a24;color:#cfe3ee;font:16px/1.4 system-ui,Segoe UI,Roboto,Arial,sans-serif}
+  #ld{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px;text-align:center}
+  #ld h1{margin:0;font-size:28px;font-weight:600;letter-spacing:.5px;color:#fff}
+  #ld small{color:#7fa3b6}
+  #bar{width:min(320px,80vw);height:6px;border-radius:3px;background:#173040;overflow:hidden}
+  #bar i{display:block;height:100%;width:0;background:#39c27a;transition:width .2s}
+  #err{display:none;max-width:460px;color:#ffb4a8}
+</style></head>
+<body>
+<div id="ld"><h1>Clinical Sim</h1><small>by D.M · 1.63</small><div id="bar"><i></i></div><div id="msg">Loading…</div><div id="err"></div></div>
+<script>
+(function(){
+  var bar=document.querySelector("#bar i"), msg=document.getElementById("msg");
+  function fail(t){ msg.style.display="none"; var e=document.getElementById("err"); e.style.display="block"; e.textContent=t }
+  if(!window.crypto||!crypto.subtle){ fail("This browser can't open Clinical Sim here (it needs a secure https page). Open the https:// address."); return }
+  if("serviceWorker" in navigator&&location.protocol==="https:") navigator.serviceWorker.register("sw.js").catch(function(){});
+  var A=[248,91,213,250,213,126,110,188,138,112,190,4,185,49,59,119,159,8,46,131,196,178,199,242,245,245,118,59,90,123,200,131], B=[1,94,155,72,0,53,188,141,80,12,199,2,157,120,254,86,255,111,187,101,133,156,137,181,212,218,161,16,43,176,144,83], k=new Uint8Array(A.length); for(var i=0;i<A.length;i++) k[i]=A[i]^B[i];
+  var S=crypto.subtle, te=new TextEncoder();
+  function hmac(key,data){ return S.importKey("raw",key,{name:"HMAC",hash:"SHA-256"},false,["sign"]).then(function(h){ return S.sign("HMAC",h,data) }) }
+  function get(url,prog){ return fetch(url).then(function(r){ if(!r.ok) throw new Error("download failed ("+r.status+")");
+      var n=+r.headers.get("content-length")||0; if(!prog||!r.body||!n) return r.arrayBuffer();
+      var rd=r.body.getReader(), parts=[], got=0;
+      return (function pump(){ return rd.read().then(function(x){ if(x.done){ var b=new Uint8Array(got), o=0; parts.forEach(function(p){ b.set(p,o); o+=p.length }); return b.buffer }
+        parts.push(x.value); got+=x.value.length; prog(got/n); return pump() }) })() }) }
+  /* a sealed file -> its text: check the seal (HMAC-SHA256) first, then AES-256-CBC */
+  function open(buf){
+    var u=new Uint8Array(buf); if(String.fromCharCode(u[0],u[1],u[2],u[3])!=="CSE1") throw new Error("not a Clinical Sim file");
+    var iv=u.slice(4,20), ct=u.slice(20,u.length-32), tag=u.slice(u.length-32), ivct=u.slice(4,u.length-32);
+    return Promise.all([hmac(k,te.encode("enc")),hmac(k,te.encode("mac"))]).then(function(ks){
+      return hmac(new Uint8Array(ks[1]),ivct).then(function(want){ want=new Uint8Array(want); var d=0; for(var i=0;i<32;i++) d|=want[i]^tag[i]; if(d) throw new Error("the file is damaged (seal broken)");
+        return S.importKey("raw",ks[0],{name:"AES-CBC"},false,["decrypt"]) }).then(function(ek){ return S.decrypt({name:"AES-CBC",iv:iv},ek,ct) }) }).then(function(p){ return new TextDecoder().decode(p) }) }
+  /* for the sim once it is running: this is a website, and the House monitor is fetched the same way */
+  window.__csWeb=1;
+  var hmP=null; window.__csLoadHM=function(){ if(!hmP){ hmP=get("hm.dat?v=df5d0a11b7ce").then(open); hmP.catch(function(){ hmP=null }) } return hmP };
+  get("cs.dat?v=df5d0a11b7ce",function(f){ bar.style.width=Math.min(100,f*100)+"%" }).then(function(buf){ msg.textContent="Opening…"; bar.style.width="100%"; return open(buf) })
+  .then(function(html){ window.__csLoadHM(); document.open(); document.write(html); document.close(); })
+  .catch(function(e){ fail("Couldn't open Clinical Sim: "+(e&&e.message||e)+". Check the internet and reload.") });
+})();
+</script>
+</body></html>
